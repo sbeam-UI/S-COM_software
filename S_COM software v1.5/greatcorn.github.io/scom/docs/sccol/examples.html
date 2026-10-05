@@ -1,0 +1,132 @@
+<html>
+	
+<!-- Mirrored from https://greatcorn.github.io/scom/docs/sccol/examples.html by HTTrack Website Copier/3.x [XR&CO], Sun, 04 Oct 2026 07:41:37 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+		<title>EXAMPLES - SCCOL Docs</title>
+		<link rel="stylesheet" type="text/css" href="../../commonStyles.css">
+		<style>
+			html{
+				overflow-y: auto;
+			}
+			p, big {
+				margin: 4px;
+				white-space: pre-wrap;
+				margin-bottom: 0.5em;
+			}
+			big{
+				
+			}
+			.menu{
+				transition: all 1s ease;
+			}
+			li{
+				margin-left: 1em;
+			}
+			a {
+				cursor: url('../../link.png'), auto;
+			}
+		</style>
+		<script src="../../cmds.js"></script>
+		<script src="navbar.js"></script>
+		<script>
+			function Spoiler(idstr){
+				let el = document.getElementById(idstr);
+				if(el){
+					if(el.style.display == "none"){
+						el.style.display = "block";
+						return;
+					}
+					el.style.display = "none";
+				}
+			}
+		</script>
+	</head>
+	<body onload="Start()">
+		<div class="main-container">
+			<h1>EXAMPLES</h1>
+			<hr>
+			<p> This page contains some examples of programming on SCCOL to help you better understand how to use it.</p>
+			<ul>
+				<li><a href="#Pbottles">24 BOTTLES</a></li>
+				<li><a href="#PbgColor">BACKGROUND RANDOMIZER</a></li>
+				<li><a href="#PhelloWorld">HELLO WORLD</a></li>
+				<li><a href="#PhwA">HELLO WORLD (ADVANCED)</a></li>
+				<li><a href="#PpiA">PI APPROXIMATION</a></li>
+			</ul>
+			<p id="Pbottles" class=option style="padding: 2px;" onclick="Spoiler('bottles')"><small>▼</small><big>24 BOTTLES</big></p>
+			<blockquote id="bottles" class=quote style="display: none">SET 0 24;
+PROC VERSE;
+  SAY %^0 bottles of SCP-207-1 on the wall;
+  SAY %^0 bottles of SCP-207-1.;
+  SAY Take one down, pass it around;
+  SET 0 (%^0 $- 1);
+  IF (%^0$>0) SAY %^0 bottles of SCP-207-1 on the wall.;
+  IF (%^0$>0) CALL VERSE;
+  
+  IF (%^0$=0) SAY [REDACTED];
+  IF (%^0$=0) FREE 0;
+  IF (%^0$=0) FREE VERSE;
+END;
+CALL VERSE;</blockquote>
+			<hr>
+			<p id="PbgColor" class=option style="padding: 2px;" onclick="Spoiler('bgColor')"><small>▼</small><big>BACKGROUND RANDOMIZER</big></p>
+			<blockquote id="bgColor" class=quote style="display: none">CLR;
+SAY The program will set the background color to a random color.;
+SAY Press any key. Press ESC to exit.;
+PROC MAIN;
+  SET 1 (%^R$*1000);
+  INT 1;
+  BG #%^1;
+  KEY 0;
+  IF (%^0$=27) BG BLACK;
+  IF (%^0$=27) CLR;
+  
+  IF (%^0$!=27) CALL MAIN;
+
+  IF (%^0$=27) CALL FINISH;
+END;
+PROC FINISH;
+  FREE 0 1;
+  FREE MAIN;
+  FREE FINISH;
+END;
+CALL MAIN;</blockquote>
+			<hr>
+			<p id="PhelloWorld" class=option style="padding: 2px;" onclick="Spoiler('helloWorld')"><small>▼</small><big>HELLO WORLD</big></p>
+			<blockquote id="helloWorld" class=quote style="display: none">SAY Hello, World!;</blockquote>
+			<hr>
+			<p id="PhwA" class=option style="padding: 2px;" onclick="Spoiler('hwA')"><small>▼</small><big>HELLO WORLD (ADVANCED)</big></p>
+			<blockquote id="hwA" class=quote style="display: none">PROC MAIN;
+  SET 0 World;
+  SAY %$YHello, %^0!;
+  SET 0 you;
+  SAY %$LPleased to see %^0 again!;
+  FREE 0;
+  FREE MAIN;
+  MEM;
+END;
+CALL MAIN;</blockquote>
+			<hr>
+			<p id="PpiA" class=option style="padding: 2px;" onclick="Spoiler('piA')"><small>▼</small><big>PI APPROXIMATION</big></p>
+			<blockquote id="piA" class=quote style="display: none">SET 0 20000; // ITERATIONS;
+SET 1 0; // PI;
+SET 2 0; // I;
+PROC CALC;
+  SET 3 (%^2 $* 2); // I*2;
+  SET 4 (%^3 $+ 1); // I*2+1;
+  SET 5 (4 $/ %^4); // 4 / (I*2+1);
+  IF ((%^2$%2)$=0) SET 1 (%^1 $+ %^5);
+  IF ((%^2$%2)$!=0) SET 1 (%^1 $- %^5);
+  WAIT 1;
+  IF (%^2$<%^0) SET 2 (%^2 $+ 1);
+  IF (%^2$<%^0) CALL CALC;
+  IF ((%^2$%16)$=1) CLR;
+  IF ((%^2$%16)$=1) SAY %^1;
+END;
+CALL CALC;</blockquote>
+		</div>
+	</body>
+
+<!-- Mirrored from https://greatcorn.github.io/scom/docs/sccol/examples.html by HTTrack Website Copier/3.x [XR&CO], Sun, 04 Oct 2026 07:41:37 GMT -->
+</html>

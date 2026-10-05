@@ -1,0 +1,62 @@
+<html>
+	
+<!-- Mirrored from https://greatcorn.github.io/scom/docs/sccol/proc.html by HTTrack Website Copier/3.x [XR&CO], Sun, 04 Oct 2026 07:41:37 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+		<title>PROC - SCCOL Docs</title>
+		<link rel="stylesheet" type="text/css" href="../../commonStyles.css">
+		<style>
+			html{
+				overflow-y: auto;
+			}
+			p, big {
+				margin: 4px;
+				white-space: pre-wrap;
+				margin-bottom: 0.5em;
+			}
+			big{
+				
+			}
+			.menu{
+				transition: all 1s ease;
+			}
+			li{
+				margin-left: 1em;
+			}
+			a {
+				cursor: url('../../link.png'), auto;
+			}
+		</style>
+		<script src="../../cmds.js"></script>
+		<script src="navbar.js"></script>
+	</head>
+	<body onload="Start()">
+		<div class="main-container">
+			@<a href="https://greatcorn.github.io/docs/sccol/#COMMANDS">Commands</a>
+			<h1>PROC {name}</h1>
+			<hr>
+			<big>Description:</big>
+			<p> Starts the declaration of a procedure with the specified name, which will later be used as the procedure's identifier. All code after this command will be used as the procedure's code. Declaration must be ended with the <a href="end.html" class=quote>END</a> command.</p>
+			<big>Arguments:</big>
+			<p> <i>STR {name}</i> - the specified procedure's name. Will be used to call the procedure after declaring it using the <a href="call.html" class=quote>CALL</a> command.</p>
+			<hr>
+			<big>Example of usage:</big>
+			<blockquote class=quote>SET 0 0;
+PROC MAIN;
+  SAY %^0;
+  SET 0 (%^0 $+ 1);
+  IF (%^0$<5) CALL MAIN;
+END;
+CALL MAIN;
+</blockquote>
+			<big>Output:</big>
+			<blockquote class=quote>0
+1
+2
+3
+4</blockquote>
+		</div>
+	</body>
+
+<!-- Mirrored from https://greatcorn.github.io/scom/docs/sccol/proc.html by HTTrack Website Copier/3.x [XR&CO], Sun, 04 Oct 2026 07:41:37 GMT -->
+</html>

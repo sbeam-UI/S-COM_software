@@ -1,0 +1,28 @@
+HTTrack3.50-5 launched on Sun, 04 Oct 2026 15:39:44 at https://greatcorn.github.io/scom/s-com15.html +*.png +*.gif +*.jpg +*.jpeg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar
+(winhttrack -qwC2%Ps2u1%s%uN0%I0p3DaK0H0%kf2%f#f -F "Mozilla/5.0 (compatible; HTTrack; +https://www.httrack.com/)" -%F "<!-- Mirrored from {url} by HTTrack Website Copier/3.x [XR&CO], {date} -->" -%l "zh, en, *" https://greatcorn.github.io/scom/s-com15.html -O1 "D:\My Websites\S_COM software v1.5" +*.png +*.gif +*.jpg +*.jpeg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar )
+
+Information, Warnings and Errors reported for this mirror:
+note:	the hts-log.txt file, and hts-cache folder, may contain sensitive information,
+	such as username/password authentication for websites mirrored in this project
+	do not share these files/folders if you want these information to remain private
+
+15:40:29	Info: 	Retry after error -4 (Connect Error) at link https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js (from https://greatcorn.github.io/scom/s-com15.html)
+15:40:29	Error: 	"Not Found" (404) at link https://greatcorn.github.io/scom/favicon_old.png (from https://greatcorn.github.io/scom/s-com15.html)
+15:40:29	Error: 	"Not Found" (404) at link https://greatcorn.github.io/link.png (from https://greatcorn.github.io/scom/commonStyles.css)
+15:41:02	Error: 	"Not Found" (404) at link https://greatcorn.github.io/favicon.png (from https://greatcorn.github.io/scom/s-messenger/index.html)
+15:41:02	Error: 	"Not Found" (404) at link https://greatcorn.github.io/scpf.png (from https://greatcorn.github.io/scom/s-messenger/index.html)
+15:41:02	Error: 	"Not Found" (404) at link https://greatcorn.github.io/scpsign.png (from https://greatcorn.github.io/scom/s-messenger/index.html)
+15:41:02	Error: 	"Not Found" (404) at link https://greatcorn.github.io/cursor.png (from https://greatcorn.github.io/scom/s-messenger/index.html)
+15:41:02	Error: 	"Not Found" (404) at link https://greatcorn.github.io/beam.png (from https://greatcorn.github.io/scom/s-messenger/index.html)
+15:41:02	Error: 	"Not Found" (404) at link https://greatcorn.github.io/pushpin.png (from https://greatcorn.github.io/scom/s-messenger/index.html)
+15:41:04	Info: 	Retry after error -4 (Connect Error) at link https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js (from https://greatcorn.github.io/scom/s-com15.html)
+15:41:37	Error: 	"Not Found" (404) at link https://greatcorn.github.io/scom/utils.js (from https://greatcorn.github.io/scom/s-messenger/peerjs.min.js)
+15:41:37	Error: 	"Not Found" (404) at link https://greatcorn.github.io/scom/s-messenger/adapter_factory.js (from https://greatcorn.github.io/scom/s-messenger/peerjs.min.js)
+15:41:37	Error: 	"Connect Error" (-4) after 2 retries at link https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js (from https://greatcorn.github.io/scom/s-com15.html)
+15:41:37	Error: 	"Not Found" (404) at link https://greatcorn.github.io/scom/docs/sccol/pi.html (from https://greatcorn.github.io/scom/docs/sccol/basics.html)
+15:41:37	Error: 	"Not Found" (404) at link https://greatcorn.github.io/scom/docs/sccol/d2r.html (from https://greatcorn.github.io/scom/docs/sccol/basics.html)
+
+HTTrack Website Copier/3.50-5 mirror complete in 1 minutes 53 seconds : 58 links scanned, 42 files written (496976 bytes overall) [368301 bytes received at 3259 bytes/sec], 435091 bytes transferred using HTTP compression in 33 files, ratio 34%, 4.2 requests per connection
+(13 errors, 0 warnings, 2 messages)
+(1 links failed to transfer, so the mirror is incomplete)
+(Some links above the start directory were not mirrored. Pass -B (--can-go-up-and-down) to mirror them.)

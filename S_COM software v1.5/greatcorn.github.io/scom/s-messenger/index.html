@@ -1,0 +1,1770 @@
+<html>
+	
+<!-- Mirrored from https://greatcorn.github.io/scom/s-messenger/index.html by HTTrack Website Copier/3.x [XR&CO], Sun, 04 Oct 2026 07:40:23 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>S-Messenger</title>
+		<link rel="stylesheet" type="text/css" href="../commonStyles.css">
+		<style>
+			.bottomui {
+				position:fixed;
+				bottom:0;
+				left:0;
+				width: 100%;
+			}
+			
+			.fade {
+				opacity: 1;
+				transition: opacity 1s linear;
+			}
+			
+			.fade-quick {
+				opacity: 0;
+				transition: opacity 0.1s linear;
+			}
+			.scplogo {
+				display: block;
+				margin-left: auto;
+				margin-right: auto;
+				height: 50%;
+				margin-top: 7%;
+				transition: height 0.6s ease;
+			}
+			.logoanim {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				margin-left: auto;
+				margin-right: auto;
+				opacity: 0;
+				transition: transform 0.7s linear, opacity 0.6s ease, height 0.6s ease;
+			}
+			
+			.suggest {
+				cursor: url('../link.png'), auto;
+				padding: 4px;
+				display: block;
+				background: #191919;
+				color: #fff;
+				border: 1px solid #424242;
+			}
+			
+			.menuWindow {
+				background: #212121;
+				position: absolute;
+				z-index: 3;
+				max-width: 100%;
+				max-height: 100%;
+			}
+			.uicheckbox {
+				min-width: 20px;
+				min-height: 20px;
+				max-width: 20px;
+				max-height: 20px;
+				background: #424242;
+				border: none;
+				padding: 0px;
+				margin: 2px;
+				margin-left: 4px;
+				position: absolute;
+			}
+			.typing {
+				background: #424242;
+				position: fixed;
+				display: block;
+				padding: 2px;
+			}
+			.message {
+				overflow-wrap: break-word;
+				word-wrap: break-word;
+				hyphens: auto;
+				padding: 14px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				max-width: 75%;
+				white-space: pre-wrap;
+			}
+			pre {
+				overflow: auto;
+				font-weight: normal;
+				font-size: 13px;
+				cursor: url('../beam.png'), auto;
+			}
+			.message:active {
+				background: #404040;
+				color: #696969;
+			}
+		</style>
+		<script>
+			function StringToBool(str){
+				if(str == "true"){
+					return true;
+				}
+				return false;
+			}
+			function setCookie(cname, cvalue, exdays) {
+				var d = new Date();
+				d.setTime(d.getTime() + (exdays*24*60*60*1000));
+				var expires = "expires="+ d.toUTCString();
+				console.log(expires);
+				document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+			}
+			function getCookie(cname) {
+				var name = cname + "=";
+				var ca = document.cookie.split(';');
+				for(var i = 0; i < ca.length; i++) {
+					var c = ca[i];
+					while (c.charAt(0) == ' ') {
+						c = c.substring(1);
+					}
+					if (c.indexOf(name) == 0) {
+						return c.substring(name.length, c.length);
+					}
+				}
+				return "";
+			}
+			function assignCookie(idstr, value) {
+				var elObj = document.getElementById(idstr);
+				if(value == true){
+					if(elObj){
+						elObj.innerText = '✓';
+						return true;
+					}
+				}
+				if(elObj){
+					elObj.innerText = '';
+				}
+				return;
+			}
+			//GLOBALVARS
+			//SERVER
+			const defaultServer = "wss://";
+			if(getCookie("server") == ""){
+				var server = defaultServer;
+			}
+			else{
+				var server = getCookie("server");
+			}
+			//USERNAME
+			if(getCookie("username") == ""){
+				var username = makeid(8);
+			}
+			else{
+				var username = getCookie("username");
+			}
+			//ENABLE NOTIFY
+			if(getCookie("enableNotify") == ""){
+				var enableNotify = true;
+			}
+			else{
+				var enableNotify = StringToBool(getCookie("enableNotify"));
+			}
+			//ENABLE SOUND
+			if(getCookie("enableSound") == ""){
+				var enableSound = true;
+			}
+			else{
+				var enableSound = StringToBool(getCookie("enableSound"));
+			}
+			//ENABLE TYPING
+			if(getCookie("enableTyping") == ""){
+				var enableTyping = true;
+			}
+			else{
+				var enableTyping = StringToBool(getCookie("enableTyping"));
+			}
+			//ENABLE FULLSCREEN
+			if(getCookie("enableFullscreen") == "true"){
+				document.documentElement.requestFullscreen();
+			}
+			//ENABLE NEWLINE REPLACE TAG
+			if(getCookie("enableNTag") == ""){
+				var enableNTag = true;
+			}
+			else{
+				var enableNTag = StringToBool(getCookie("enableNTag"));
+			}
+			//ENABLE HISTORY
+			if(getCookie("enableHistory") == ""){
+				var enableHistory = true;
+			}
+			else{
+				var enableHistory = StringToBool(getCookie("enableHistory"));
+			}
+			//CHECK FOR UPDATES
+			if(getCookie("checkNV") == ""){
+				var checkNV = true;
+			}
+			else{
+				var checkNV = StringToBool(getCookie("checkNV"));
+			}
+			var peopleTypingTimeout;
+			var clientTypingTimeout;
+			var logType = true;
+			var peopleTyping = [];
+			var typer;
+			var websocket, peer, p2p;
+			var connected = false;
+			var lastElement;
+			var suggestcur = -1;
+			var cmds = ["/clr", "/check", "/disconnect", "/info (str)", "/refresh", "/username {str}"];
+			var cmdsEl = [];
+			var bbs = ["[aud]", "[i]", "[img]", "[n]", "[quote]", "[u]", "[small]", "[big]", "[tt]", "[notag]", "[color]", "[url]", "[vid]", "[size]", "[align]", "[b]", "[frame]", "[code]"];
+			bbs.sort();
+			var bbsEl = [];
+			var ddon = false;
+			var pinnedMessage;
+			var mhistory = [];
+			var version = "";
+			var checkNVTimer;
+			var dragOptions = false;
+			var optionsWindow;
+			var mouseprev = [0, 0];
+			var mouserel = [0, 0];
+			var cryptoKey;
+			window.crypto.subtle.generateKey({
+				name: "AES-CTR",
+				length: 256
+			},true,["encrypt", "decrypt"]).then((key) =>{
+				cryptoKey = key;
+			});
+			
+			let deferredPrompt;
+			//APPLICATION
+			window.addEventListener('beforeinstallprompt', (e) => {
+			  // Stash the event so it can be triggered later.
+			  deferredPrompt = e;
+			});
+			if ('serviceWorker' in navigator) {
+			  window.addEventListener('load', function() {
+				navigator.serviceWorker.register('sw.js', {scope: '.'}).then(function(registration) {
+				  // Registration was successful
+				  console.log('ServiceWorker registration successful with scope: ', registration.scope);
+				}, function(err) {
+				  // registration failed :(
+				  console.log('ServiceWorker registration failed: ', err);
+				});
+			  });
+			}
+			
+			var CACHE_NAME = 'my-site-cache-v1';
+			var urlsToCache = [
+				'/',
+				'../../favicon.html',
+				'../../scpf.html',
+				'../../scpsign.html',
+				'https://greatcorn.github.io/message.mp3',
+				'https://greatcorn.github.io/message1.mp3',
+				'https://greatcorn.github.io/manifest.json',
+				'../../link.html',
+				'../../cursor.html',
+				'../../beam.html',
+				'../../pushpin.html'
+			];
+
+			self.addEventListener('install', function(event) {
+			  // Perform install steps
+			  event.waitUntil(
+				caches.open(CACHE_NAME)
+				  .then(function(cache) {
+					console.log('Opened cache');
+					return cache.addAll(urlsToCache);
+				  })
+			  );
+			});
+			function inIframe () {
+				if ( window.location !== window.parent.location ) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+			function insertAtCaret(areaId, text) {
+				var txtarea = document.getElementById(areaId);
+				var scrollPos = txtarea.scrollTop;
+				var caretPos = txtarea.selectionStart;
+
+				var front = (txtarea.value).substring(0, caretPos);
+				var back = (txtarea.value).substring(txtarea.selectionEnd, txtarea.value.length);
+				txtarea.value = front + text + back;
+				caretPos = caretPos + text.length;
+				txtarea.selectionStart = caretPos;
+				txtarea.selectionEnd = caretPos;
+				txtarea.focus();
+				txtarea.scrollTop = scrollPos;
+			}
+			
+			function ChangeVersion(){
+				var rawFile = new XMLHttpRequest();
+				rawFile.open("GET", 'manifest.json', true);
+				rawFile.onload = function (){
+					if(rawFile.readyState === rawFile.DONE){
+						if(rawFile.status === 200 || rawFile.status == 0){
+							var allText = JSON.parse(rawFile.responseText).version;
+							version = allText;
+							document.getElementById("versionShow").innerText = "Version "+version;
+						}
+					}
+				};
+				rawFile.send(null);
+			}
+			
+			function CheckVersion(){
+				if(checkNVTimer){
+					clearTimeout(checkNVTimer);
+					checkNVTimer = 0;
+				}
+				var rawFile = new XMLHttpRequest();
+				rawFile.open("GET", 'manifest.json', true);
+				rawFile.onload = function (){
+					if(rawFile.readyState === rawFile.DONE){
+						if(rawFile.status === 200 || rawFile.status == 0){
+							var someText = rawFile.responseText;
+							var allText = JSON.parse(someText).version;
+							if(allText != version){
+								console.log("NEW VERSION FOUND");
+								var menu = document.getElementById("updateMenu");
+								document.getElementById("newVersion").innerText = allText;
+								menu.style.display = "block";
+								menu.style.left = window.innerWidth/2 - menu.getBoundingClientRect().width/2;
+								menu.style.top = window.innerHeight/2 - menu.getBoundingClientRect().height/2;
+								document.getElementById("updateLabel").style.display = "block";
+								Notify(allText, "New update available");
+							}
+							else{
+								if(checkNV){
+									checkNVTimer = setTimeout(CheckVersion, 10000);
+								}
+							}
+						}
+					}
+				};
+				rawFile.send(null);
+			}
+			
+			function Start(){
+				peer = new Peer();
+				peer.on('open', function(id) {
+					console.log("My peer ID is: " + id);
+					document.getElementById("uuid").innerText = id;
+				});
+				peer.on('connection', function(conn) {
+					p2p = conn;
+					p2p.on('open', function(){
+						document.getElementById("ws").value = p2p.peer;
+						ServerOpen();
+						Connect();
+					});
+				});
+				if(inIframe()){
+					document.getElementById("windowBorder").style.display = "none";
+					document.getElementById("windowContent").style.height = "100%";
+				}
+				Resize();
+				PR.prettyPrint();
+				//SET COOKIES
+				assignCookie('cbNotif', enableNotify);
+				assignCookie('cbSound', enableSound);
+				assignCookie('cbType', enableTyping);
+				assignCookie('cbNL', enableNTag);
+				assignCookie('cbUpdate', checkNV);
+				assignCookie('cbHist', enableHistory);
+				document.getElementById("ws").value = server;
+				setTimeout(function(){
+					var anim = document.getElementById('serverInput'); 
+					anim.style.opacity = 1;
+				}, 400);
+				setTimeout(function(){
+					document.getElementById('scplogo').style.height = "38%"; 
+					document.getElementById('scplogoleft').style.height = "38%"; 
+					document.getElementById('scplogoright').style.height = "38%"; 
+				}, 800);
+				optionsWindow = document.getElementById("optionsMenu");
+				typer = document.getElementById("typer");
+				document.getElementById("notifperm").innerText = Notification.permission;
+				var input = document.getElementById("chatInput");
+				ChangeVersion();
+				if(checkNV){
+					CheckVersion();
+				}
+				document.body.parentNode.addEventListener('click', function(event){
+					var dropdowns = document.getElementsByClassName("dropdown");
+					event.preventDefault();
+					if(ddon){
+						if (!dropdowns[0].contains(event.target)) {
+							ClearDropDowns();
+						}
+					}
+					if(!ddon){
+						if(dropdowns.length > 0){
+							ddon = true;
+						}
+					}
+				});
+				document.body.addEventListener("keyup", function(event) {
+					if(!connected){
+						if (event.keyCode === 13) {
+							document.getElementById("connectbutton").click();
+						}
+					}
+				});
+				document.addEventListener('visibilitychange', function(){
+					if (document.visibilityState == "visible"){
+						navigator.serviceWorker.ready.then(function(registration) {
+							registration.getNotifications().then(function(notificationArray){
+								for (let ntf of notificationArray)
+									ntf.close();
+							});
+						});
+					}
+				});
+				input.addEventListener("keyup", function(event) {
+					if (event.keyCode === 13) {
+						if (event.shiftKey){
+							insertAtCaret("chatInput", "[n]");
+						}
+						else{
+							document.getElementById("sendButton").click();
+						}
+					}
+					if(document.getElementById("suggestbox").style.display != "none"){
+						var suggestions = document.getElementsByClassName("suggest");
+						var available = [];
+						for (let i=0; i<suggestions.length; i++){
+							if(suggestions[i].style.display == "block"){
+								available.push(suggestions[i]);
+							}
+						}
+						if (event.keyCode === 38) {
+							if(suggestcur == -1){
+								suggestcur = available.length;
+							}
+							if(input.value.charAt(0) == '/' || input.value.charAt(0) == '['){
+								if(suggestcur > 0){
+									suggestcur--;
+								}
+								input.value = available[suggestcur].innerText;
+							}
+						}
+						if (event.keyCode === 40) {
+							if(suggestcur == -1){
+								suggestcur = 0;
+							}
+							if(input.value.charAt(0) == '/' || input.value.charAt(0) == '['){
+								if(suggestcur < available.length-1){
+									suggestcur++;
+								}
+								input.value = available[suggestcur].innerText;
+							}
+						}
+					}
+					else{
+						if (event.keyCode === 38) {
+							if(suggestcur == -1){
+								suggestcur = mhistory.length;
+							}
+							if(suggestcur > 0){
+								suggestcur--;
+							}
+							input.value = mhistory[suggestcur];
+						}
+						if (event.keyCode === 40) {
+							if(suggestcur == -1){
+								suggestcur = mhistory.length;
+							}
+							if(suggestcur < mhistory.length-1){
+								suggestcur++;
+							}
+							input.value = mhistory[suggestcur];
+						}
+					}
+				});
+				if(Notification.permission != 'granted'){
+					Notification.requestPermission();
+				}
+				for (let i=0; i<cmds.length; i++){
+					var el = document.createElement("p");
+					el.className = "suggest";
+					el.innerText = cmds[i];
+					el.onclick = function (){
+						input.value = this.innerText;
+						input.focus();
+						CheckCommand();
+					}
+					document.getElementById("suggestbox").appendChild(el);
+					cmdsEl.push(el);
+				}
+				
+				for (let i=0; i<bbs.length; i++){
+					var el = document.createElement("p");
+					el.className = "suggest";
+					el.innerText = bbs[i];
+					el.onclick = function (){
+						input.value = this.innerText+this.innerText.slice(0, 1)+'/'+this.innerText.slice(1);
+						input.focus();
+						CheckCommand();
+					}
+					document.getElementById("suggestbox").appendChild(el);
+					bbsEl.push(el);
+				}
+			}
+			
+			function Load(){
+				var servers = document.getElementById('servers');
+				servers.className='fade';
+				servers.style.opacity=1;
+				document.getElementById('ws').value = server;
+				document.getElementById('un').value = username;
+			}
+			
+			function SendClick(){
+				suggestcur = -1;
+				var input = document.getElementById("chatInput");
+				if(input.value != ""){
+					mhistory.push(input.value);
+					if(input.value.charAt(0) == '@'){
+						var read="";
+						for(let i=1; i<input.value.length; i++){
+							if (input.value.charAt(i) == "@"){
+								break;
+							}
+							read += input.value.charAt(i);
+						}
+						var today = new Date();
+						var time = pad(today.getHours()) + ":" + pad(today.getMinutes());
+						Message('client', input.value, time);
+						SendMessage('private', username, input.value, read);
+					}
+					else if(input.value.charAt(0) == '/'){
+						var read="";
+						for(let i=1; i<input.value.length; i++){
+							if (input.value.charAt(i) == " "){
+								break;
+							}
+							read += input.value.charAt(i);
+						}
+						switch (read){
+							case "clr":
+								var msgs = document.getElementsByClassName("chatMessage");
+								while (msgs[0]) {
+									msgs[0].parentNode.removeChild(msgs[0]);
+								}
+								break;
+								
+							case "check":
+								var prs = "";
+								for(let i=7; i<input.value.length; i++){
+									prs+=input.value.charAt(i);
+								}
+								Message('server', 'Online users:', '0');
+								if(prs == "/s"){
+									SendMessage('joincheck', username);
+								}
+								else{
+									SendMessage('message', 'server', 'Online users:');
+									SendMessage('check', 'server', '');
+									SendMessage('message', 'server', username);
+								}
+								Message('server', username, '0');
+								break;
+								
+							case "username":
+								var prs = "";
+								for(let i=10; i<input.value.length; i++){
+									prs+=input.value.charAt(i);
+								}
+								if(prs == ""){
+									Message("server", "Invalid username.");
+									return;
+								}
+								if(prs.length > 32){
+									Message("server", "USERNAME TOO LONG");
+									return;
+								}
+								if(prs == "client" || prs == "server"){
+									Message("server", "REGISTERED PROPERTY");
+									return;
+								}
+								if(prs.includes('@')){
+									Message("server", "ILLEGAL CHARACTER IN USERNAME");
+									return;
+								}
+								Message("server", username+" changed username to "+prs+".");
+								SendMessage('message', 'server', username+" changed username to "+prs+".");
+								username = prs;
+								setCookie('username', username, 365);
+								break;
+								
+							case "disconnect":
+								End();
+								break;
+								
+							case "info":
+								var prs = "";
+								for (let i=6; i<input.value.length; i++){
+									prs+=input.value.charAt(i);
+								}
+								if(prs == ""){
+									Message('server', "S-Messenger "+version);
+									Message('server', "© SCP Technologies Ltd 1999-2004");
+									Message('server', navigator.platform+Define(navigator.oscpu)+" "+navigator.language+". "+Define(navigator.vendor));
+									Message('server', Define(navigator.userAgent));
+								}
+								else{
+									switch (prs){
+										case "clr":
+											Message('server', "/clr");
+											Message('server', "Clears the screen of all client text.");
+											break;
+											
+										case "check":
+											Message('server', "/check");
+											Message('server', "Publicly displays all online clients.");
+											break;
+											
+										case "disconnect":
+											Message('server', "/disconnects");
+											Message('server', "Disconnects client from the currently connected server and returns to the menu screen.");
+											break;
+											
+										case "info":
+											Message('server', "/info (str)");
+											Message('server', "Privately displays info about the client, specified command or tag.");
+											Message('server', "(str) - the specified command or tag. To display client info leave blank.");
+											Message('server', "Example of usage: /info clr shows info about /clr command.");
+											Message('server', "[notag]/info [img] shows info about [img] tag.");
+											break;
+											
+										case "username":
+											Message('server', "/username {str}");
+											Message('server', "Publicly changes client's displayed username to specified.");
+											Message('server', "{str} - the specified username. This is required to execute the command.");
+											Message('server', "Example of usage: [i]/username CONT_999[/i]");
+											break;
+											
+										case "refresh":
+											Message('server', "/refresh");
+											Message('server', "Refreshes the S-Messenger (to possibly update to a newer version). This will disconnect the client from the currently connected server.");
+											break;
+											
+										case "[align]":
+											Message('server', "[notag][align={str}][/align]");
+											Message('server', "Allows text align to specified value. End tag required.");
+											Message('server', "{str} - the specified align value (CENTER | LEFT | RIGHT).");
+											Message('server', "Example: [align=left]This message is aligned left.[/align]");
+											break;
+											
+										case "[aud]":
+											Message('server', "[notag][aud]{link}[/aud]");
+											Message('server', "Allows embedding direct audio links as playable audio. End tag required.");
+											Message('server', "{link} - the specified direct audio link.");
+											Message('server', "Example: [aud]message.mp3[/aud]");
+											break;
+											
+										case "[b]":
+											Message('server', "[notag][b][/b]");
+											Message('server', "Makes inner text bold. End tag required.");
+											Message('server', "Example: [b]This text is bold.[/b]");
+											break;
+											
+										case "[big]":
+											Message('server', "[notag][big][/big]");
+											Message('server', "Makes inner text relatively bigger. End tag required.");
+											Message('server', "Example: [big]This text is big.[/big]");
+											break;
+											
+										case "[color]":
+											Message('server', "[notag][color={color}][/color]");
+											Message('server', "Makes inner text colored in the specified color. End tag required.");
+											Message('server', "{color} - the specified color. Can be a CSS constant or a hex value.");
+											Message('server', "Example: [color=blue]This text is colored blue.[/color]");
+											break;
+											
+										case "[i]":
+											Message('server', "[notag][i][/i]");
+											Message('server', "Makes inner text italic. End tag required.");
+											Message('server', "Example: [i]This text is italic.[/i]");
+											break;
+											
+										case "[img]":
+											Message('server', "[notag][img]{link}[/img]");
+											Message('server', "Allows embedding direct image links as displayed images. End tag required.");
+											Message('server', "{link} - the specified direct image link.");
+											Message('server', "Example: [img]scpf.png[/img]");
+											break;
+											
+										case "[n]":
+											Message('server', "[⁣n]");
+											Message('server', "Adds newline to text. Can also be entered via Shift+Enter. End tag not required.");
+											Message('server', "Example: New[n]line.");
+											
+										case "[notag]":
+											Message('server', "[⁣notag]");
+											Message('server', "Disables tags in message. End tag not required.");
+											Message('server', "Example: [notag][i]This text is not italic.[/i]");
+											break;
+											
+										case "[quote]":
+											Message('server', "[notag][quote][/quote]");
+											Message('server', "Makes inner text quoted. End tag required.");
+											Message('server', "Example: [quote]This text is quoted.[/quote]");
+											break;
+											
+										case "[size]":
+											Message('server', "[notag][size={val}][/size]");
+											Message('server', "Makes inner text's size the specified number. End tag required.");
+											Message('server', "Example: [size=32]This text's size is 32px.[/size]");
+											break;
+											
+										case "[small]":
+											Message('server', "[notag][small][/small]");
+											Message('server', "Makes inner text relatively smaller. End tag required.");
+											Message('server', "Example: [small]This text is small.[/small]");
+											break;
+											
+										case "[tt]":
+											Message('server', "[notag][tt][/tt]");
+											Message('server', "Makes inner text in a fixed-size font. End tag required.");
+											Message('server', "Example: [tt]This text is in a fixed-size font.[/tt]");
+											break;
+											
+										case "[u]":
+											Message('server', "[notag][u][/u]");
+											Message('server', "Makes inner text underlined. End tag required.");
+											Message('server', "Example: [u]This text is underlined.[/u]");
+											break;
+											
+										case "[url]":
+											Message('server', "[notag][url=(link)](link)[/url]");
+											Message('server', "Allows embedding clickable URL links. End tag required.");
+											Message('server', "(link) - the specified URL link.");
+											Message('server', "Example: [url=favicon.png]Logo of the SCP Foundation.[/url]");
+											break;
+											
+										case "[vid]":
+											Message('server', "[notag][vid]{link}[/vid]");
+											Message('server', "Allows embedding direct video links as playable videos. End tag required.");
+											Message('server', "{link} - the specified direct video link.");
+											Message('server', "Example: [vid]SCPTECH.mp4[/vid]");
+											break;
+											
+										default:
+											Message('server', 'No info found about "'+prs+'" command.');
+											break;
+										
+									}
+								}
+								break;
+								
+							case "refresh":
+								location.reload();
+								break;
+								
+							default:
+								Message("server", "Unknown command.", "");
+								break;
+						}
+					}
+					else{
+						var today = new Date();
+						var time = pad(today.getHours()) + ":" + pad(today.getMinutes());
+						Message('client', input.value, time);
+						SendMessage('message', username, input.value);
+					}
+				}
+				input.value = "";
+				CheckCommand();
+				input.focus();
+			}
+			function Define(str){
+				if(str != null){
+					return str;
+				}
+				return "";
+			}
+			function pad(d) {
+				return (d < 10) ? '0' + d.toString() : d.toString();
+			}
+			function SendMessage(msgid, msgsender, msgtext, msgadressant){
+				var today = new Date();
+				var time = pad(today.getHours()) + ":" + pad(today.getMinutes());
+				var msg = {
+						id: msgid,
+						sender: msgsender,
+						text: msgtext,
+						time: time,
+						adressant: msgadressant
+					};
+				if(websocket)
+					websocket.send(JSON.stringify(msg));
+				else
+					p2p.send(JSON.stringify(msg));
+			}
+			function MessageImage(sender, src, time){
+				var msgBody = document.createElement("div");
+				var msg = document.createElement("div");
+				var msgImg = document.createElement("img");
+				msgImg.src = src;
+				msgImg.style["max-width"] = "100%";
+				var msgSender = document.createElement("p");
+				if(sender === 'client'){
+					msg.style.background = "#191919";
+					msg.style.padding = 14;
+					msgBody.style["margin-top"] = 5;
+					msgBody.style["margin-bottom"] = 5;
+					msgBody.style["min-width"] = "100%";
+					msg.style["max-width"] = "75%";
+					msg.style.float = "right";
+					msgBody.style.overflow = "auto";
+					const msgStat = document.createElement("small");
+					msgStat.innerText = username+", "+time;
+					msgSender.appendChild(msgStat);
+					msgSender.align = "RIGHT";
+				}
+				else{
+					msg.style.background = "#0A0A0A";
+					msg.style.padding = 14;
+					msgBody.style["margin-top"] = 5;
+					msgBody.style["margin-bottom"] = 5;
+					msgBody.style["min-width"] = "100%";
+					msg.style["max-width"] = "75%";
+					msg.style.float = "left";
+					msgBody.style.overflow = "auto";
+					const msgStat = document.createElement("small");
+					msgStat.innerText = sender+", "+time;
+					msgSender.appendChild(msgStat);
+					msgSender.align = "LEFT";
+				}
+				msg.appendChild(msgImg);
+				msg.appendChild(msgSender);
+				msgBody.appendChild(msg);
+				document.getElementById("chatbox").appendChild(msgBody);
+				msg.scrollIntoView();
+			}
+			function Message(sender, text, time){
+				var msgBody = document.createElement("div");
+				msgBody.className = "chatMessage";
+				var msg = document.createElement("div");
+				var msgText = document.createElement("p");
+				msgText.className = "messageText";
+				msgText.innerText = text;
+				var msgSender = document.createElement("p");
+				msg.className = "message";
+				if(sender === 'client'){
+					msg.style.background = "#191919";
+					msgBody.style["min-width"] = "100%";
+					msg.style.float = "right";
+					msgBody.style.overflow = "auto";
+					const msgStat = document.createElement("small");
+					msgStat.innerText = username+", "+time;
+					msgSender.appendChild(msgStat);
+					msgSender.align = "RIGHT";
+				}
+				else if (sender === 'server'){
+					msg.style["max-width"] = "100%";
+					msg.style.padding = 0;
+					msg.align = "CENTER";
+					msg.style.color = "#666"
+				}
+				else{
+					msg.style.background = "#0A0A0A";
+					msgBody.style["min-width"] = "100%";
+					msg.style.float = "left";
+					msgBody.style.overflow = "auto";
+					const msgStat = document.createElement("small");
+					msgStat.innerText = sender+", "+time;
+					msgSender.appendChild(msgStat);
+					msgSender.align = "LEFT";
+				}
+				msg.onclick = function(){
+					lastElement = this;
+					ClearDropDowns();
+					var dropdown = document.createElement("div");
+					dropdown.className = "dropdown";
+					dropdown.style.position = "absolute";
+					
+					var optionQuote = document.createElement("p");
+					optionQuote.innerText = "Quote text";
+					optionQuote.onclick = function(){
+						for(let i=0; i<lastElement.children.length; i++){
+							if(lastElement.children[i].className == "messageText"){
+								document.getElementById("chatInput").value = '[quote]'+lastElement.children[i].textContent+'[/quote]';
+								document.getElementById("chatInput").focus();
+								ClearDropDowns();
+								break;
+							}
+						}
+					};
+					var optionDelete = document.createElement("p");
+					optionDelete.innerText = "Delete message";
+					optionDelete.onclick = function(){lastElement.parentNode.removeChild(lastElement); ClearDropDowns();};
+					var optionCopy = document.createElement("p");
+					optionCopy.innerText = "Copy text";
+					optionCopy.onclick = function(){
+						for(let i=0; i<lastElement.children.length; i++){
+							if(lastElement.children[i].className == "messageText"){
+								var txtarea = document.createElement('textarea');
+								txtarea.value = lastElement.children[i].innerText;
+								document.body.appendChild(txtarea);
+								txtarea.select();
+								document.execCommand('copy');
+								txtarea.parentNode.removeChild(txtarea);
+								ClearDropDowns();
+								break;
+							}
+						}
+					};
+					var optionTag = document.createElement("p");
+					optionTag.innerText = "Send private";
+					optionTag.onclick = function(){
+						document.getElementById("chatInput").value = '@'+lastElement.children[1].innerText.split(",")[0]+'@ '+document.getElementById("chatInput").value;
+						document.getElementById("chatInput").focus();
+						ClearDropDowns();
+					};
+					var optionCancel = document.createElement("p");
+					optionCancel.innerText = "Cancel";
+					optionCancel.onclick = function(){ClearDropDowns();};
+
+					
+					optionQuote.className = "option";
+					optionDelete.className = "option";
+					optionCopy.className = "option";
+					optionTag.className = "option";
+					optionCancel.className = "option";
+					
+					dropdown.appendChild(optionQuote);
+					dropdown.appendChild(optionDelete);
+					dropdown.appendChild(optionCopy);
+					dropdown.appendChild(optionTag);
+					dropdown.appendChild(optionCancel);
+					
+					msgBody.appendChild(dropdown);
+					
+					var rect = this.getBoundingClientRect();
+					var droprect = dropdown.getBoundingClientRect();
+					if(rect.top>document.body.getBoundingClientRect().height-droprect.height-49){
+						dropdown.style.top = document.body.getBoundingClientRect().height-droprect.height-49;
+					}
+					else if(rect.top<0){
+						dropdown.style.top = 0;
+					}
+					else{
+						dropdown.style.top = rect.top;
+					}
+					if(rect.left>document.body.getBoundingClientRect().width-droprect.width){
+						dropdown.style.left = document.body.getBoundingClientRect().width-droprect.width;
+					}
+					else{
+						dropdown.style.left = rect.left;
+					}
+				};
+				msg.appendChild(msgText);
+				//BB CODE
+				if(!msgText.innerText.includes("[notag]")){
+					//msgText.innerText = msgText.innerText.replace(/(\[img\])/g, "<img style='max-width: 100%; outline: none;' src='");
+					//msgText.innerHTML = msgText.innerText.replace(/(\[\/img\])/g, "'>");
+					//msgText.innerText = msgText.innerText.replace(/(\[vid\])/g, "<video controls style='max-width: 100%; outline: none;'><source src='");
+					//msgText.innerText = msgText.innerText.replace(/(\[\/vid\])/g, "'></video>");
+					//msgText.innerText = msgText.innerText.replace(/(\[aud\])/g, "<audio controls style='max-width: 100%; outline: none;'><source src='");
+					//msgText.innerText = msgText.innerText.replace(/(\[\/aud\])/g, "'></audio>");
+					var tagCount;
+					//[FRAME]
+					tagCount = (msgText.innerHTML.match(/(\[frame\])/g) || []).length;
+					for(let i=0; i<tagCount; i++){
+						var prs="";
+						
+						for(let j=msgText.innerHTML.indexOf("[frame]")+7; j<msgText.innerHTML.length; j++){
+							if(msgText.innerHTML.charAt(j) == "["){
+								if(msgText.innerHTML.charAt(j+1) == "/"){
+									break;
+								}
+							}
+							prs+=msgText.innerHTML.charAt(j);
+						}
+						msgText.innerHTML = msgText.innerHTML.replace("[frame]"+prs+"[/frame]", '<iframe id="BBTEMP" allowfullscreen style="width: 50vw; height: 35vh; max-width: 100%"></iframe>');
+						let msgBB = msgText.querySelector("#BBTEMP");
+							msgBB.id = "";
+							msgBB.src = prs;
+					}
+					//[IMAGE]
+					tagCount = (msgText.innerHTML.match(/(\[img\])/g) || []).length;
+					for(let i=0; i<tagCount; i++){
+						var prs="";
+						
+						for(let j=msgText.innerHTML.indexOf("[img]")+5; j<msgText.innerHTML.length; j++){
+							if(msgText.innerHTML.charAt(j) == "["){
+								if(msgText.innerHTML.charAt(j+1) == "/"){
+									break;
+								}
+							}
+							prs+=msgText.innerHTML.charAt(j);
+						}
+						msgText.innerHTML = msgText.innerHTML.replace("[img]"+prs+"[/img]", '<img style="max-width:100%" id="BBTEMP">');
+						let msgBB = msgText.querySelector("#BBTEMP");
+							msgBB.id = "";
+							msgBB.src = prs;
+					}
+					//[AUDIO]
+					tagCount = (msgText.innerHTML.match(/(\[aud\])/g) || []).length;
+					for(let i=0; i<tagCount; i++){
+						var prs="";
+						
+						for(let j=msgText.innerHTML.indexOf("[aud]")+5; j<msgText.innerHTML.length; j++){
+							if(msgText.innerHTML.charAt(j) == "["){
+								if(msgText.innerHTML.charAt(j+1) == "/"){
+									break;
+								}
+							}
+							prs+=msgText.innerHTML.charAt(j);
+						}
+						msgText.innerHTML = msgText.innerHTML.replace("[aud]"+prs+"[/aud]", '<audio controls style="max-width: 100%; outline: none;"><source id="BBTEMP"></audio>');
+						let msgBB = msgText.querySelector("#BBTEMP");
+							msgBB.id = "";
+							msgBB.src = prs;
+					}
+					//[VIDEO]
+					tagCount = (msgText.innerHTML.match(/(\[vid\])/g) || []).length;
+					for(let i=0; i<tagCount; i++){
+						var prs="";
+						
+						for(let j=msgText.innerHTML.indexOf("[vid]")+5; j<msgText.innerHTML.length; j++){
+							if(msgText.innerHTML.charAt(j) == "["){
+								if(msgText.innerHTML.charAt(j+1) == "/"){
+									break;
+								}
+							}
+							prs+=msgText.innerHTML.charAt(j);
+						}
+						msgText.innerHTML = msgText.innerHTML.replace("[vid]"+prs+"[/vid]", '<video controls style="max-width: 100%; outline: none;"><source id="BBTEMP"></video>');
+						let msgBB = msgText.querySelector("#BBTEMP");
+							msgBB.id = "";
+							msgBB.src = prs;
+					}
+					//[COLOR]
+					tagCount = (msgText.innerHTML.match(/(\[color=)/g) || []).length;
+					for(let i=0; i<tagCount; i++){
+						var prs="";
+						for(let j=msgText.innerHTML.indexOf("[color=")+7; j<msgText.innerHTML.length; j++){
+							if(msgText.innerHTML.charAt(j) == "]"){
+								break;
+							}
+							prs+=msgText.innerHTML.charAt(j);
+						}
+						msgText.innerHTML = msgText.innerHTML.replace("[color="+prs+"]", '<span id="BBTEMP">').replace("[/color]", "</span>");
+						let msgBB = msgText.querySelector("#BBTEMP");
+							msgBB.id = "";
+							msgBB.style.color = prs;
+					}
+					//[ALIGN]
+					tagCount = (msgText.innerHTML.match(/(\[align=)/g) || []).length;
+					for(let i=0; i<tagCount; i++){
+						var prs="";
+						for(let j=msgText.innerHTML.indexOf("[align=")+7; j<msgText.innerHTML.length; j++){
+							if(msgText.innerHTML.charAt(j) == "]"){
+								break;
+							}
+							prs+=msgText.innerHTML.charAt(j);
+						}
+						msgText.innerHTML = msgText.innerHTML.replace("[align="+prs+"]", '<p id="BBTEMP">').replace("[/align]", "</p>");
+						let msgBB = msgText.querySelector("#BBTEMP");
+							msgBB.id = "";
+							msgBB.style.textAlign = prs;
+					}
+					//[URL=]
+					tagCount = (msgText.innerHTML.match(/(\[url=)/g) || []).length;
+					for(let i=0; i<tagCount; i++){
+						var prs="";
+						for(let j=msgText.innerHTML.indexOf("[url=")+5; j<msgText.innerHTML.length; j++){
+							if(msgText.innerHTML.charAt(j) == "]"){
+								break;
+							}
+							prs+=msgText.innerHTML.charAt(j);
+						}
+						msgText.innerHTML = msgText.innerHTML.replace("[url="+prs+"]", '<a id="BBTEMP">').replace("[/url]", "</a>");
+						let msgBB = msgText.querySelector("#BBTEMP");
+							msgBB.id = "";
+							msgBB.href = prs;
+					}
+					//[URL]
+					var tagCount = (msgText.innerHTML.match(/(\[url\])/g) || []).length;
+					for(let i=0; i<tagCount; i++){
+						var prs="";
+						for(let j=msgText.innerHTML.indexOf("[url]")+5; j<msgText.innerHTML.length; j++){
+							if(msgText.innerHTML.charAt(j) == "["){
+								if(msgText.innerHTML.charAt(j+1) == "/"){
+									break;
+								}
+							}
+							prs+=msgText.innerHTML.charAt(j);
+						}
+						msgText.innerHTML = msgText.innerHTML.replace("[url]"+prs+"[/url]", '<a id="BBTEMP"></a>');
+						let msgBB = msgText.querySelector("#BBTEMP");
+							msgBB.id = "";
+							msgBB.href = prs;
+							msgBB.innerText = prs;
+					}
+					//[SIZE=]
+					tagCount = (msgText.innerHTML.match(/(\[size=)/g) || []).length;
+					for(let i=0; i<tagCount; i++){
+						var prs="";
+						for(let j=msgText.innerHTML.indexOf("[size=")+6; j<msgText.innerHTML.length; j++){
+							if(msgText.innerHTML.charAt(j) == "]"){
+								break;
+							}
+							prs+=msgText.innerHTML.charAt(j);
+						}
+						var iprs = prs;
+						if(parseInt(prs) > 200){iprs='200';}
+						if(parseInt(prs) < 0){iprs='0';}
+						msgText.innerHTML = msgText.innerHTML.replace("[size="+prs+"]", '<span id="BBTEMP">').replace("[/size]", "</span>");
+						let msgBB = msgText.querySelector("#BBTEMP");
+							msgBB.id = "";
+							msgBB.style.fontSize = prs;
+					}
+					//msgText.innerHTML = msgText.innerText;
+					//<button style='font-size: 48px; color: #fff; background: #000;' onclick='ClearDropDowns();'>▶</button>
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[b\])/g, '<b>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[\/b\])/g, '</b>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[i\])/g, '<i>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[\/i\])/g, '</i>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[u\])/g, '<u>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[\/u\])/g, '</u>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[small\])/g, '<small>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[\/small\])/g, '</small>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[tt\])/g, '<tt>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[\/tt\])/g, '</tt>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[big\])/g, '<big>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[\/big\])/g, '</big>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[quote\])/g, '<blockquote style="background: #444; padding: 8px; margin: 4px; border-left-style: solid; ">');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[\/quote\])/g, '</blockquote>');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[code\])/g, '<pre class="prettyprint" style="max-width: 100%; background: #444; padding: 8px; margin: 4px; max-width: 100%; ">');
+					msgText.innerHTML = msgText.innerHTML.replace(/(\[\/code\])/g, '</pre>');
+				}
+				else{
+					msgText.innerText = msgText.innerHTML.replace(/(\[notag\])/g, "");
+				}
+				msgText.innerHTML = msgText.innerHTML.replace(/(\[n\])/g, '<br>');
+				
+				msgSender.innerHTML = "<small>"+msgSender.innerText+"<small>";
+				msg.appendChild(msgSender);
+				msgBody.appendChild(msg);
+				let chatbox = document.getElementById("chatbox");
+				let shouldScroll = ((chatbox.scrollHeight - chatbox.scrollTop - 6) <= chatbox.clientHeight);
+				chatbox.appendChild(msgBody);
+				console.log(shouldScroll);
+				if((sender === 'client') || shouldScroll)
+					msg.scrollIntoView();
+				PR.prettyPrint();
+			}
+			function ClearDropDowns(){
+				ddon = false;
+				var dropdowns = document.getElementsByClassName("dropdown");
+				while (dropdowns[0]) {
+					dropdowns[0].parentNode.removeChild(dropdowns[0]);
+				}
+			}
+			function PinMessage(text){
+				/*
+				var lastpin = document.getElementById('pin');
+				if(lastpin != null){
+					lastpin.parentNode.removeChild(lastpin);
+				}
+				var pin = document.createElement('p');
+				pin.id = "pin";
+				pin.style.background = "#292929";
+				//pin.style.position = "absolute";
+				pin.style["min-width"] = "100%";
+				pin.style.overflow = "auto";
+				pin.style.top = "0px";
+				pin.style["box-sizing"] = "border-box";
+				pin.style.padding = 4;
+				pin.innerHTML = "<img style='height: 1em; margin-right: 0.5em; margin-left: 0.2em;' src='pushpin.png'>"+text;
+				pin.onclick = function(){pinnedMessage.scrollIntoView();}
+				document.getElementById("chat").insertBefore(pin, document.getElementById("chatbox"));
+				setTimeout(function(){
+					const mhstr = `calc(100% - ${25 + pin.getBoundingClientRect().height}px);`;
+					console.log(pin.getBoundingClientRect().height);
+					console.log(mhstr);
+					document.getElementById("chatbox").style.maxHeight = mhstr;
+				}, 10);
+				*/
+			}
+			function makeid(length) {
+				var result           = '';
+				var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+				var charactersLength = characters.length;
+				for ( var i = 0; i < length; i++ ) {
+					result += characters.charAt(Math.floor(Math.random() * charactersLength));
+				}
+				return result;
+			}
+			
+			function ServerError(event){
+				console.log("Error event:", event);
+				error.innerText = "CONNECTION ERROR";
+				error.className = "";
+				error.style.opacity = 1;
+				setTimeout(function(){
+					error.className = "fade";
+					error.style.opacity = 0;
+				}, 10);
+				if(websocket)
+					websocket.close();
+				else
+					p2p.close();
+				document.getElementById("connectbutton").disabled = false;
+				return;
+			};
+			function ServerOpen(event){
+				console.log("OPENING");
+				server = document.getElementById("ws").value;
+				setCookie('server', server, 365);
+				setCookie('username', username, 365);
+				SendMessage('message', 'server', username+' has joined the session.');
+				var servers = document.getElementById("servers");
+				connected = true;
+				servers.className = "fade-quick";
+				servers.style.opacity = 0;
+				document.getElementById("chat").style.display = "block";
+				servers.style.display = "none";
+				if(enableHistory)
+					SendMessage('history', username, '');
+				setTimeout(function(){
+					Message('server', 'Successfully connected to a server. Online users:');
+					Message('server', username);
+					SendMessage('joincheck', username);
+				}, 200);
+				//history.pushState({'page_id': 1, 'user_id': 5}, 'S-Messenger', 's-messenger.html');
+			};
+			function ServerClose(event){
+				//SendMessage('message', 'server', username+' has left the session.');
+				console.log("Close event:", event);
+				document.getElementById("audio_disconnect").play();
+				Message('server', 'Disconnecting...');
+				setTimeout(function(){
+					ClearDropDowns();
+					var lastpin = document.getElementById('pin');
+					if(lastpin != null){
+						lastpin.parentNode.removeChild(lastpin);
+					}
+					var msgs = document.getElementsByClassName("chatMessage");
+					while (msgs[0]) {
+						msgs[0].parentNode.removeChild(msgs[0]);
+					}
+					console.log("CLOSING");
+					var servers = document.getElementById("servers");
+					document.getElementById("chat").style.display = "none";
+					servers.style.display = "block";
+					servers.style.opacity = 1;
+					document.getElementById("connectbutton").disabled = false;
+				}, 1000);
+			};
+			function ServerMessage(event){
+				var msg = JSON.parse((typeof event == 'string') ? event : event.data);
+				switch (msg.id){
+					case 'message':
+						Message(msg.sender, msg.text, msg.time);
+						Notify(msg.sender, msg.text);
+						break;
+					case 'kick':
+						if(msg.sender == 'server'){
+							if(msg.text == username){
+								SendMessage('message', 'server', username+' has been kicked from the session.');
+								websocket.close();
+							}
+						}
+						break;
+					case 'end':
+						if(msg.sender == 'server'){
+							websocket.close();
+						}
+						break;
+					case 'check':
+						Message('server', username, '0');
+						SendMessage('message', 'server', username);
+						break;
+					case 'joincheck':
+						SendMessage('private', 'server', username, msg.sender);
+						break;
+						
+					case 'private':
+						if(msg.adressant == username){
+							Message(msg.sender, msg.text, msg.time);
+							Notify(msg.sender, msg.text);
+							if(document.hasFocus()){
+								if(enableSound){
+									document.getElementById("audio_message").play();
+								}
+							}
+							else{
+								if(enableSound){
+									document.getElementById("audio_notification").play();
+								}
+								if(enableNotify){
+									var options = {
+										body: msg.text,
+										icon: "favicon.png"
+									}
+									var msgNotify = new Notification(msg.sender, options);
+								}
+							}
+						}
+						break;
+						
+					case 'pin':
+						PinMessage(msg.text);
+						break;
+					case 'unpin':
+						var lastpin = document.getElementById('pin');
+						if(lastpin != null){
+							lastpin.parentNode.removeChild(lastpin);
+						}
+						break;
+					case 'pinrequest':
+						SendMessage('pin', 'server', document.getElementById("pin").innerText);
+						break;
+						
+					case 'update':
+						location.reload();
+						break;
+						
+					case 'typing':
+						window.clearTimeout(peopleTypingTimeout);
+						typer.style.display = "block";
+						if (!peopleTyping.includes(msg.sender)){
+							peopleTyping.push(msg.sender);
+							typer.innerText = peopleTyping[0]+' is typing...';
+							if(peopleTyping.length>1){
+								typer.innerText = peopleTyping.join(", ")+' are typing...';
+							}
+							if(peopleTyping.length>4){
+								typer.innerText = 'Several people are typing...';
+							}
+						}
+						peopleTypingTimeout = setTimeout(function(){
+							WaitForTimeout(msg.sender);
+						}, 2000);
+						break;
+				}
+			}
+			
+			function Connect(){
+				var ws = document.getElementById("ws");
+				var un = document.getElementById("un");
+				var error = document.getElementById("error");
+				if(ws.value == ""){
+					error.innerText = "WEBSOCKET URL BLANK";
+					error.className = "";
+					error.style.opacity = 1;
+					setTimeout(function(){
+						error.className = "fade";
+						error.style.opacity = 0;
+					}, 10);
+					return;
+				}
+				if(un.value == ""){
+					error.innerText = "USERNAME BLANK";
+					error.className = "";
+					error.style.opacity = 1;
+					setTimeout(function(){
+						error.className = "fade";
+						error.style.opacity = 0;
+					}, 10);
+					return;
+				}
+				if(un.length > 32){
+					error.innerText = "USERNAME TOO LONG";
+					error.className = "";
+					error.style.opacity = 1;
+					setTimeout(function(){
+						error.className = "fade";
+						error.style.opacity = 0;
+					}, 10);
+					return;
+				}
+				if(un.value == "client" || un.value == "server"){
+					error.innerText = "REGISTERED PROPERTY";
+					error.className = "";
+					error.style.opacity = 1;
+					setTimeout(function(){
+						error.className = "fade";
+						error.style.opacity = 0;
+					}, 10);
+					return;
+				}
+				if(un.value.includes('@')){
+					error.innerText = "ILLEGAL CHARACTER IN USERNAME";
+					error.className = "";
+					error.style.opacity = 1;
+					setTimeout(function(){
+						error.className = "fade";
+						error.style.opacity = 0;
+					}, 10);
+					return;
+				}
+				document.getElementById("connectbutton").disabled = true;
+				username = un.value;
+				
+				
+				if (ws.value.includes('ws')){
+					websocket = new WebSocket(ws.value);
+					websocket.onerror = ServerError;
+					websocket.onopen = ServerOpen;
+					websocket.onclose = ServerClose;
+					websocket.onmessage = ServerMessage;
+				}
+				else{
+					if(!p2p)
+						p2p = peer.connect(ws.value);
+					peer.on('error', ServerError);
+					p2p.on('error', ServerError);
+					p2p.on('open', ServerOpen);
+					p2p.on('close', ServerClose);
+					p2p.on('data', ServerMessage);
+				}
+			}
+			function WaitForTimeout(senders) {
+				console.log("WAITING FOR INPUT CLEAR")
+				peopleTyping.splice(peopleTyping.indexOf(senders), 1);
+				if (peopleTyping.length == 0){
+					typer.style.display = "none";
+				}
+				else{
+					peopleTypingTimeout = setTimeout(function(){
+						WaitForTimeout(senders);
+					}, 2000);
+				}
+			}
+			function End() {
+				if (connected){
+					SendMessage('message', 'server', username+' has left the session.');
+					if(websocket)
+						websocket.close();
+					else
+						p2p.close();
+				}
+			}
+			function CheckCommand(){
+				suggestcur = -1;
+				var input = document.getElementById("chatInput").value;
+				if (input.length > 0){
+					if(input.charAt(0) == "/"){
+						document.getElementById("suggestbox").style.display = "block";
+					}
+					else if(input.charAt(input.length-1) == "["){
+						document.getElementById("suggestbox").style.display = "block";
+					}
+					else if(input.charAt(input.length-1) == "]"){
+						document.getElementById("suggestbox").style.display = "none";
+					}
+					for (let i=0; i<cmds.length; i++){
+						if(cmds[i].includes(input)){
+							cmdsEl[i].style.display = "block";
+						}
+						else{
+							cmdsEl[i].style.display = "none";
+						}
+					}
+					for (let i=0; i<bbs.length; i++){
+						if(input.includes("[")){
+							if(bbs[i].includes(input.slice(input.lastIndexOf("[")))){
+								bbsEl[i].style.display = "block";
+							}
+							else{
+								bbsEl[i].style.display = "none";
+							}
+						}
+						else{
+							bbsEl[i].style.display = "none";
+						}
+					}
+				}
+				else{
+					document.getElementById("suggestbox").style.display = "none";
+				}
+			}
+			function Exit(){
+				End();
+				close();
+			}
+			function Minimize(){
+				/*window.innerWidth = 100;
+				window.innerHeight = 100;
+				window.screenX = screen.width;
+				window.screenY = screen.height;
+				alwaysLowered = true;*/
+			}
+			function Options(){
+				if(optionsWindow.style.display == "block"){
+					optionsWindow.style.display = "none";
+					return;
+				}
+				optionsWindow.style.display = "block";
+				optionsWindow.style.left = window.innerWidth/2 - optionsWindow.getBoundingClientRect().width/2;
+				optionsWindow.style.top = window.innerHeight/2 - optionsWindow.getBoundingClientRect().height/2;
+			}
+			
+			function Drag(val){
+				dragOptions = val;
+			}
+			function MouseMove(event){
+				mouserel[0] = event.clientX-mouseprev[0];
+				mouserel[1] = event.clientY-mouseprev[1];
+				//console.log(mouserel);
+				if(dragOptions){
+					optionsWindow.style.top = parseInt(optionsWindow.style.top)+mouserel[1];
+					optionsWindow.style.left = parseInt(optionsWindow.style.left)+mouserel[0];
+				}
+				mouseprev[0]=event.clientX;
+				mouseprev[1]=event.clientY;
+			}
+			function TouchStart(event){
+				var touches = event.changedTouches;
+				mouseprev[0]=touches[0].pageX;
+				mouseprev[1]=touches[0].pageY;
+				dragOptions = true;
+			}
+			function TouchMove(event){
+				var touches = event.changedTouches;
+				mouserel[0] = touches[0].pageX-mouseprev[0];
+				mouserel[1] = touches[0].pageY-mouseprev[1];
+				console.log(dragOptions);
+				if(dragOptions){
+					optionsWindow.style.top = parseInt(optionsWindow.style.top)+mouserel[1];
+					optionsWindow.style.left = parseInt(optionsWindow.style.left)+mouserel[0];
+				}
+				mouseprev[0]=touches[0].pageX;
+				mouseprev[1]=touches[0].pageY;
+			}
+			function OnPaste(){
+				navigator.clipboard.readText().then(text => {
+					var replaced = text.replace(/(?:\r\n|\r|\n)/g, '[n]');
+					console.log(replaced);
+					insertAtCaret('chatInput', replaced);
+					document.getElementById("chatInput").focus();
+				});
+				//return false;
+			}
+			function Type(){
+				if(connected){
+					if(enableTyping){
+					if(logType){
+						SendMessage('typing', username);
+						logType = false;
+						setTimeout(function(){
+							logType = true;
+						}, 1700);
+					}
+					}
+				}
+			}
+			function Notify(title, text){
+				if(document.hasFocus()){
+					if(enableSound){
+						document.getElementById("audio_message").play();
+					}
+				}
+				else{
+					if(enableSound){
+						document.getElementById("audio_notification").play();
+					}
+					if(enableNotify){
+						if (("Notification" in window)) {
+							if (Notification.permission === "granted") {
+								var options = {
+									body: text,
+									icon: "favicon.png",
+									vibrate: [200, 100, 200]
+								}
+								if(!enableSound){
+									options["silent"] = true;
+								}
+								navigator.serviceWorker.ready.then(function(registration) {
+									registration.showNotification(title, options);
+								});
+								//var msgNotify = new Notification(title, options);
+							}
+							else if (Notification.permission !== "denied"){
+								Notification.requestPermission().then(function (permission) {
+									navigator.serviceWorker.ready.then(function(registration) {
+										registration.showNotification(title, options);
+									});
+									//var msgNotify = new Notification(title, options);
+								});
+							}
+						}
+					}
+				}
+			}
+			
+			function getTextEncoding(text) {
+				let enc = new TextEncoder();
+				return enc.encode(text);
+			}
+			
+			function encryptMessage(text, key) {
+				counter = window.crypto.getRandomValues(new Uint8Array(16));
+				return window.crypto.subtle.encrypt(
+					{
+						name: "AES-CTR",
+						counter,
+						length: 64
+					},
+					key,
+					text
+				);
+			}
+			function decryptMessage(encrypted, key) {
+				let decrypted = window.crypto.subtle.decrypt(
+					{
+						name: "AES-CTR",
+						counter,
+						length: 64
+					},
+					key,
+					encrypted
+				);
+				let dec = new TextDecoder();
+				return dec.decode(decrypted);
+			}
+			
+			function DefaultSettings(){
+				setCookie('server', '', -32);
+				setCookie('username', '', -32);
+				setCookie('checkNV', '', -32);
+				setCookie('enableNTag', '', -32);
+				setCookie('enableNotify', '', -32);
+				setCookie('enableSound', '', -32);
+				setCookie('enableTyping', '', -32);
+				location.reload();
+			}
+			function Resize(){
+				let mtl = document.getElementById("MenuTopLayout");
+				if (window.innerWidth < window.innerHeight){
+					mtl.style.top = "unset";
+					mtl.style.bottom = 0;
+					mtl.style.alignItems = "flex-end";
+				}
+				else{
+					mtl.style.top = 0;
+					mtl.style.bottom = "unset";
+					mtl.style.alignItems = "flex-start";
+				}
+			}
+		</script>
+		<script src="peerjs.min.js"></script>
+		<!-- src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></--> 
+		<link rel="stylesheet" type="text/css" href="prettify.css">
+		<script type="text/javascript" src="prettify.js"></script>
+		<link rel="shortcut icon" href="favicon.png">
+		<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+	</head>
+	<body onload = "Start()" onbeforeunload="End()" onmousemove="MouseMove(event)" ontouchmove="TouchMove(event)" ontouchend="dragOptions = false;" onmouseup="dragOptions = false;" onresize="Resize()">
+		<audio id="audio_message">
+			<source src="message.mp3">
+		</audio>
+		<audio id="audio_notification">
+			<source src="message1.mp3">
+		</audio>
+		<audio id="audio_disconnect">
+			<source src="disconnect.mp3">
+		</audio>
+		<div id="windowBorder" class=windowBorder style="z-index: 8;">
+			<span style="padding:3px; padding-left: 6px; position: absolute; top: 0;">S-Messenger</span>
+			<img src="../close.png" class=windowButton onclick="Exit()" ondragstart="return false;">
+			<img src="../hide.png" class=windowButton onclick="Minimize()" ondragstart="return false;">
+			<img src="../options.png" style="margin-right: 8px" class=windowButton onclick="Options()" ondragstart="return false;">
+		</div>
+		<div id="windowContent" style="display: block; position: absolute; display:inline-block; width: 100%; height: calc(100% - 24px);">
+			<p id="updateLabel" align=CENTER style="display: none; position: fixed; width: 100%;">NEW UPDATE AVAILABLE</p>
+			<div id="optionsMenu" class=menuWindow style="display: none; width: 350; height: auto; padding-bottom: 4px;">
+				<div id="windowBorder" class=windowBorder onmousedown="dragOptions = true;" ontouchstart="TouchStart(event)">
+					<span style="padding:3px; padding-left: 6px; position: absolute; top: 0;">Options</span>
+					<img src="../close.png" class=windowButton onclick="document.getElementById('optionsMenu').style.display = 'none';" ondragstart="return false;">
+				</div>
+				<big style="display: block; margin:4px; margin-bottom: 0px;">NOTIFICATIONS</big>
+				<hr>
+				<span style="display: inline-block; margin:4px; margin-bottom: 3px;">Permission: <span id="notifperm">Null</span></span>
+				<button class=uibutton style="float:right; margin-right: 4px;" onclick="Notification.requestPermission().then(function(result) {document.getElementById('notifperm').innerText = result;});">Request</button>
+				<br>
+				<button id="cbNotif" class="uibutton uicheckbox" onclick="if(this.innerText == '✓'){this.innerText=''; enableNotify=false; setCookie('enableNotify', 'false', 365);}else{this.innerText='✓'; enableNotify=true; setCookie('enableNotify', 'true', 365);}">✓</button>
+				<span style="display: inline-block; margin:4px; margin-left: 28px; margin-bottom: 3px;">Enable notifications</span>
+				<br>
+				<button id="cbSound" class="uibutton uicheckbox" onclick="if(this.innerText == '✓'){this.innerText=''; enableSound=false; setCookie('enableSound', 'false', 365);}else{this.innerText='✓'; enableSound=true; setCookie('enableSound', 'true', 365);}">✓</button>
+				<span style="display: inline-block; margin:4px; margin-left: 28px; margin-bottom: 3px;">Notification sound</span>
+				<hr>
+				<big style="display: block; margin:4px; margin-bottom: 0px;">PRIVACY</big>
+				<hr>
+				<button id="cbType" class="uibutton uicheckbox" onclick="if(this.innerText == '✓'){this.innerText=''; enableTyping=false; setCookie('enableTyping', 'false', 365);}else{this.innerText='✓'; enableTyping=true; setCookie('enableTyping', 'true', 365);}">✓</button>
+				<span style="display: inline-block; margin:4px; margin-left: 28px; margin-bottom: 3px;">Show typing</span>
+				<hr>
+				<big style="display: block; margin:4px; margin-bottom: 0px;">OTHER</big>
+				<hr>
+				<button id="cbFS" class="uibutton uicheckbox" onclick="if(this.innerText == '✓'){this.innerText=''; document.exitFullscreen(); setCookie('enableFullscreen', 'false', 365);}else{this.innerText='✓'; document.documentElement.requestFullscreen(); setCookie('enableFullscreen', 'true', 365);}"></button>
+				<span style="display: inline-block; margin:4px; margin-left: 28px; margin-bottom: 3px;">Fullscreen</span>
+				<br>
+				<button id="cbNL" class="uibutton uicheckbox" onclick="if(this.innerText == '✓'){this.innerText=''; enableNTag=false; setCookie('enableNTag', 'false', 365);}else{this.innerText='✓'; enableNTag=true; setCookie('enableNTag', 'true', 365);}">✓</button>
+				<span style="display: inline-block; margin:4px; margin-left: 28px; margin-bottom: 3px;">Replace newline with [n] on paste</span>
+				<br>
+				<button id="cbUpdate" class="uibutton uicheckbox" onclick="if(this.innerText == '✓'){this.innerText=''; checkNV=false; setCookie('checkNV', 'false', 365);}else{this.innerText='✓'; checkNV=true; setCookie('checkNV', 'true', 365); CheckVersion();}">✓</button>
+				<span style="display: inline-block; margin:4px; margin-left: 28px; margin-bottom: 3px;">Check for updates</span>
+				<br>
+				<hr>
+				<button class="uibutton" style="width:calc(100% - 8px); margin-left: 4px; margin-right: 4px;" onclick="DefaultSettings()">Revert to default</button>
+			</div>
+			<div id="updateMenu" class=menuWindow style="display: none; width: 340; height: 160;">
+				<div id="windowBorder" class=windowBorder>
+					<span style="padding:3px; padding-left: 6px; position: absolute; top: 0;">New update available</span>
+					<img src="../close.png" class=windowButton onclick="this.parentElement.parentElement.style.display = 'none';" ondragstart="return false;">
+				</div>
+				<p align=CENTER style="display: block; margin:4px; width: 90%; margin-left: auto; margin-right: auto; margin-bottom: 3px;">New version available - <span id="newVersion"></span></p>
+				<p align=CENTER style="display: block; margin:4px; width: 90%; margin-left: auto; margin-right: auto; margin-bottom: 3px;">You can always update using the /refresh command.</p>
+				<button class=uibutton style="position: absolute; left: 16px; bottom: 12px;" onclick="location.reload()">Refresh</button>
+				<button class=uibutton style="position: absolute; right: 16px; bottom: 12px;" onclick="this.parentElement.style.display = 'none';">Cancel</button>
+			</div>
+			<div id="servers" style="opacity: 0; position: absolute; width:100%;  height:100%; overflow-y: auto; overflow-x: hidden;">
+				<div>
+					<img id="scplogo" src="../scpf.png" class=scplogo onload="Load(); setTimeout(function(){var anim = document.getElementById('scplogo'); anim.style.transform = 'rotate(180deg)';}, 1200);" ondragstart="return false;"  style="transform: rotate(0deg); transition: transform 0.7s ease, height 0.6s ease;">
+					<img id="scplogoleft" src="../scpsign.png" class="scplogo logoanim" style="transform: rotate(135deg) translate(-7%, 0px) scale(1.5);" onload="Load(); setTimeout(function(){var anim = document.getElementById('scplogoleft'); anim.style.transform = 'rotate(180deg) translate(0px,0px)'; anim.style.opacity = 1;}, 200);" ondragstart="return false;">
+					<img id="scplogoright" src="../scpsign.png" class="scplogo logoanim" style="transform: rotate(-135deg) translate(7%, 0px) scale(1.5);" onload="Load(); setTimeout(function(){var anim = document.getElementById('scplogoright'); anim.style.transform = 'rotate(-180deg) translate(0px,0px)'; anim.style.opacity = 1;}, 200);" ondragstart="return false;">
+				</div>
+				<div id="serverInput" style="opacity: 0; transition: opacity 0.6s linear;">
+					<h1 align=CENTER>S-Messenger</h1>
+					<p align=CENTER>Websocket URL / Peer ID</p>
+					<div style="margin-bottom:8px; margin-left:auto; margin-right:auto; width: 75%;">
+						<input id="ws" class=inputbox style="display:inline-block; margin-right: 2px; width: calc(100% - 2em - 2px);" placeholder="Enter websocket URL"><div style="display: inline-block; float: right;"><button id="updatebutton" class=uibutton style="width: 2em;" onclick='document.getElementById("ws").value = defaultServer;'>D</button></div>
+					</div>
+					<p align=CENTER>Username</p>
+					<input id="un" class=inputbox style="display:block; margin-left: auto; margin-right: auto; width: 50%; margin-bottom:8px;" placeholder="Enter username">
+					<button id="connectbutton" class=uibutton style="display:block; margin-left: auto; margin-right: auto;" onclick="Connect()">Connect</button>
+					<button id="callbutton" class=uibutton style="display:none; margin-left: auto; margin-right: auto;" onclick="Call()">Call</button>
+					<div style="display:block; margin-left: auto; margin-right: auto; text-align: center;"><button id="cbHist" class="uibutton uicheckbox" onclick="if(this.innerText == '✓'){this.innerText=''; enableHistory=false; setCookie('enableHistory', 'false', 365);}else{this.innerText='✓'; enableHistory=true; setCookie('enableHistory', 'true', 365);}">✓</button><span style="display: inline-block; margin:4px; margin-left: 28px; margin-bottom: 3px;">Request history</span></div>
+					<p id="uuid" style="color: #696969; display:block; margin-left: auto; margin-right: auto; text-align: center;" onclick="var txtarea = document.createElement('textarea'); txtarea.value = document.getElementById('uuid').innerText; document.body.appendChild(txtarea); txtarea.select(); document.execCommand('copy'); txtarea.parentNode.removeChild(txtarea);"></p>
+					<h3 id="error" align=center style="color: red; opacity: 0;">ERROR</h3>
+					<DIV id="MenuTopLayout" style="display: flex; justify-content: space-between; position: absolute; top: 0; width: calc(100% - 8px); padding: 4px;">
+						<DIV style="float: left; max-width: 65%">
+							<p id="versionShow"></p>
+							<p>© SCP Technologies Ltd 1999-2022<br>SCP Foundation 1982-2022<br><span onclick='document.getElementById("ws").value = "@S_Messenger TG"'>Hic manebimus optime.</span></p>
+						</DIV>
+						<div style="display: block; float: right"><button id="updatebutton" class=uibutton onclick="location.reload()">Refresh</button></div>
+					</DIV>
+				</div>
+			</div>
+			<div id="chat" style="display: none; overflow-y: auto;">
+				<div id="chatbox" style="overflow-y: auto; max-height: calc(100% - 25px);">
+					<div class=typing id="typer" style="bottom: 25px; display: none;"></div>
+					<div id="suggestbox" style="display: none; position: absolute; bottom: 25px; overflow: auto;">
+						
+					</div>
+				</div>
+				<div class=bottomui>
+					<input id="chatInput" class=inputbox style="width: calc(100% - 106px);"oninput="CheckCommand(); Type();" onpaste="if(enableNTag){OnPaste(); return false;}" autocomplete="off"><button id="sendButton" class=uibutton onclick="SendClick()">Send</button>
+				</div>
+			</div>
+		</div>
+	</body>
+
+<!-- Mirrored from https://greatcorn.github.io/scom/s-messenger/index.html by HTTrack Website Copier/3.x [XR&CO], Sun, 04 Oct 2026 07:40:29 GMT -->
+</html>
